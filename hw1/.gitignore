@@ -17,3 +17,6 @@ exp/
 
 # Modal logs/artifacts
 modal_volume/
+
+# Smoke-test runs kept locally
+exp_smoke/
