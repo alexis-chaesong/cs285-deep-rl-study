@@ -132,7 +132,7 @@ class MSEPolicy(BasePolicy):
 
 
 # ----------------------------------------------------------------------------
-# FlowMatchingPolicy : HW1 2부 (아직 구현 전)
+# FlowMatchingPolicy : HW1 2부 
 #   입력 : state (B, 5)
 #   학습 : 정답 A와 노이즈 A0 사이의 중간 지점 A_τ = A0 + τ(A - A0) 에서
 #          신경망이 정답 속도 (A - A0)를 맞히도록 MSE 학습   (PDF 식 2)

@@ -57,7 +57,7 @@ LLM(Claude)을 이용해 2~8강 내용을 한국어로 다시 풀어 쓴 **동�
 | 과제 | 주제 | 상태 |
 |---|---|---|
 | [HW1](hw1/) | 모방학습: MSE와 flow matching으로 액션 청킹 (Push-T) | ✅ 완료 (2026-11-10) |
-| HW2 | 정책 경사: reward-to-go, 기준선, GAE | ⏳ 다음 |
+| [HW2](hw2/) | 정책 경사: reward-to-go, 기준선, GAE | 🔄 진행 중 (실험 1 완료) |
 | HW3 | Q러닝과 액터-크리틱: DQN, Double DQN, SAC | ⏳ 예정 |
 
 ## HW1: Push-T 모방학습
@@ -120,6 +120,41 @@ uv run --with matplotlib python plot_curves.py
 
 `uv`와 W&B 설치 방법은 원래 강의 저장소에 있던 [hw1/README.md](hw1/README.md)를 참고하세요.
 
+## HW2: 정책 경사 (진행 중)
+
+지금까지 구현한 것: 환경에서 한 판 돌리기(`utils.py`), 정책의 행동 뽑기와 정책 경사 손실(`policies.py`), 할인 리턴과
+reward-to-go, 어드밴티지 정규화(`pg_agent.py`), 학습 루프(`run.py`). 신경망 기준선과 GAE는 다음 단계입니다.
+
+HW2 코드를 쓴 방식: TODO마다 LLM이 먼저 비슷한 예시를 주고(막히면 빈칸 뼈대까지), 제가 직접 줄을 쓴 뒤 LLM이
+검토했습니다. 검토에서 잡힌 제 실수는 함수 이름을 잘못 부른 것, `np.concatenate` 대신 `np.from_numpy`를 쓴 것,
+`rewards`와 `terminals`의 순서를 바꿔 넘긴 것 등이었습니다.
+
+### 실험 1: CartPole (8개, 각 100번 반복, 시드 1)
+
+| 실험 | 배치 | 최종 평가 점수 | 처음 200에 도달한 환경 스텝 |
+|---|---|---|---|
+| `cartpole` | 1000 | 97.4 | 도달 못 함 |
+| `cartpole_rtg` | 1000 | 112.5 | 24,481 |
+| `cartpole_na` | 1000 | **200** | 16,409 |
+| `cartpole_rtg_na` | 1000 | **200** | **12,595** |
+| `cartpole_lb` | 4000 | 181.3 | 88,881 |
+| `cartpole_lb_rtg` | 4000 | **200** | 60,630 |
+| `cartpole_lb_na` | 4000 | **200** | 64,525 |
+| `cartpole_lb_rtg_na` | 4000 | 150.7 | 44,444 |
+
+![CartPole 작은 배치](hw2/plots/cartpole_small_batch.png)
+![CartPole 큰 배치](hw2/plots/cartpole_large_batch.png)
+
+실행 전에 예측을 먼저 적었습니다. 세 개 중 두 개가 틀렸고, 그 두 개에서 가장 많이 배웠습니다.
+
+| 질문 | 내 예측 | 결과 |
+|---|---|---|
+| 전체 리턴 vs reward-to-go | 전체 리턴이 나음 | ❌ reward-to-go가 나음. 막대를 쓰러뜨린 행동을 덜 칭찬해서 흔들림(분산)이 줄어듦 |
+| 어드밴티지 정규화 | 도움이 됨 | ✅ 가장 큰 효과. CartPole은 보상이 항상 +1이라 평균을 빼는 것이 기준선 역할을 함 |
+| 큰 배치(4000) vs 작은 배치(1000), 환경 스텝 기준 | 큰 배치가 빠름 | ❌ 작은 배치가 더 적은 스텝으로 200에 도달. 같은 데이터로 4배 자주 업데이트하기 때문 |
+
+한계: 설정마다 시드 하나라서, 일부 하락(예: `cartpole_lb_rtg_na`의 마지막 부분)은 운일 수 있습니다.
+
 ## 내가 바꾼 부분
 
 원래 저장소와 비교해서:
@@ -132,4 +167,7 @@ uv run --with matplotlib python plot_curves.py
 - `study-guide/cs285-study-guide-ko.pdf`: LLM과 함께 만든 한국어 공부 교재
 - `README.md`, `README.ko.md`: 이 공부 기록
 
-나머지 과제(`hw2`~`hw5`, 기말 프로젝트)는 아직 원래 시작 코드 그대로입니다.
+- `hw2/src/`: 환경 루프, 정책, 리턴·어드밴티지, 학습 루프 TODO (기준선과 GAE는 아직)
+- `hw2/plot_cartpole.py`, `hw2/plots/`: 실험 1 그래프 스크립트와 그림
+
+나머지 과제(`hw3`~`hw5`, 기말 프로젝트)는 아직 원래 시작 코드 그대로입니다.

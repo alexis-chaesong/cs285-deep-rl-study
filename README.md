@@ -61,7 +61,7 @@ while doing the homework: [**study-guide/cs285-study-guide-ko.pdf**](study-guide
 | Assignment | Topic | Status |
 |---|---|---|
 | [HW1](hw1/) | Imitation learning: action chunking with MSE and flow matching (Push-T) | ✅ Done (2026-11-10) |
-| HW2 | Policy gradients: reward-to-go, baselines, GAE | ⏳ Next |
+| [HW2](hw2/) | Policy gradients: reward-to-go, baselines, GAE | 🔄 In progress (Experiment 1 done) |
 | HW3 | Q-learning and actor-critic: DQN, Double DQN, SAC | ⏳ Planned |
 
 ## HW1: Imitation Learning on Push-T
@@ -128,6 +128,43 @@ uv run --with matplotlib python plot_curves.py
 
 See [hw1/README.md](hw1/README.md) (from the original course repository) for setup with `uv` and W&B.
 
+## HW2: Policy Gradients (in progress)
+
+Implemented so far: rollout collection (`utils.py`), the policy's action sampling and policy-gradient
+loss (`policies.py`), discounted return and reward-to-go, advantage normalization (`pg_agent.py`), and the
+training loop (`run.py`). Neural-network baseline and GAE are next.
+
+How the HW2 code was written: for each TODO, the LLM first gave me a similar example (and a skeleton
+with blanks when I got stuck); I wrote the lines myself, and the LLM reviewed them. My mistakes it caught
+included calling functions by the wrong name, `np.from_numpy` instead of `np.concatenate`, and passing
+`rewards`/`terminals` in the wrong order.
+
+### Experiment 1: CartPole (8 runs, 100 iterations each, seed 1)
+
+| Run | Batch | Final eval return | First env step at return 200 |
+|---|---|---|---|
+| `cartpole` | 1000 | 97.4 | not reached |
+| `cartpole_rtg` | 1000 | 112.5 | 24,481 |
+| `cartpole_na` | 1000 | **200** | 16,409 |
+| `cartpole_rtg_na` | 1000 | **200** | **12,595** |
+| `cartpole_lb` | 4000 | 181.3 | 88,881 |
+| `cartpole_lb_rtg` | 4000 | **200** | 60,630 |
+| `cartpole_lb_na` | 4000 | **200** | 64,525 |
+| `cartpole_lb_rtg_na` | 4000 | 150.7 | 44,444 |
+
+![CartPole small batch](hw2/plots/cartpole_small_batch.png)
+![CartPole large batch](hw2/plots/cartpole_large_batch.png)
+
+Before running, I wrote down predictions. Two of three were wrong, which taught me the most:
+
+| Question | My prediction | Result |
+|---|---|---|
+| Full-trajectory return vs reward-to-go | Full return better | ❌ Reward-to-go was better: it stops crediting the actions that made the pole fall, which lowers variance |
+| Advantage normalization | Helps | ✅ Helped most. CartPole rewards are always +1, so subtracting the mean acts like a baseline |
+| Large batch (4000) vs small (1000), per environment step | Large learns faster | ❌ Small batch reached 200 in fewer steps: it updates 4× more often for the same data |
+
+Caveat: one seed per setting, so some drops (e.g. `cartpole_lb_rtg_na` at the end) may be noise.
+
 ## What I changed
 
 Compared with the original repository:
@@ -140,4 +177,7 @@ Compared with the original repository:
 - `study-guide/cs285-study-guide-ko.pdf`: my LLM-assisted Korean study guide
 - `README.md`, `README.ko.md`: this study log
 
-The other assignments (`hw2` to `hw5` and the final projects) are still the original starter code.
+- `hw2/src/`: rollout, policy, return/advantage, and training-loop TODOs (baseline and GAE not yet)
+- `hw2/plot_cartpole.py`, `hw2/plots/`: Experiment 1 plot script and figures
+
+The other assignments (`hw3` to `hw5` and the final projects) are still the original starter code.
