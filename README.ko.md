@@ -52,6 +52,20 @@ LLM(Claude)을 이용해 2~8강 내용을 한국어로 다시 풀어 쓴 **동�
 - **주의:** LLM과 함께 썼고 공부하면서 계속 검토하고 있어서, 틀린 부분이 있을 수 있습니다. 정확한 내용은 원래 강의
   자료를 기준으로 삼아 주세요.
 
+### 과제별 수식 정리 노트
+
+과제를 하면서 과제 PDF의 수식을 하나씩 풀어 쓴 노트도 올립니다. LLM(Claude 등)에게 질문하며 정리했고, 제가 읽고
+다듬은 공부 기록입니다.
+
+| 파일 | 내용 |
+|---|---|
+| [hw1/hw1_수식정리.md](hw1/hw1_수식정리.md) | HW1 식 1~3: MSE 손실, Flow Matching 손실, 오일러 적분 |
+| [hw2/hw2_수식정리.md](hw2/hw2_수식정리.md) | HW2 식 1~26: 정책 경사 유도, reward-to-go, 기준선, GAE, 정규화 |
+| [hw2/src/agents/용어정리.md](hw2/src/agents/용어정리.md) | 6·7장 비유와 HW2 코드 흐름 정리 |
+| [study-guide/HW1-HW2_수식정리.pdf](study-guide/HW1-HW2_수식정리.pdf) | 위 두 수식 노트를 합친 PDF (15쪽). 원본 노트는 그대로 두고, LLM이 숫자 예시·코드 연결·빠진 식 (19), (20)을 파란 "보충" 상자로 덧붙임 |
+
+위 교재와 마찬가지로 틀린 부분이 있을 수 있습니다.
+
 ## 진행 상황
 
 | 과제 | 주제 | 상태 |
@@ -211,6 +225,8 @@ GAE를 뒤에서부터 쌓는 재귀식 $A_t = \delta_t + \gamma\lambda A_{t+1}$
 - `hw1/plot_curves.py`, `hw1/plots/`: 학습 곡선 스크립트와 그림
 - `hw1/.gitignore`: 로컬 짧은 실행 기록(`exp_smoke/`)은 올리지 않도록 추가
 - `study-guide/cs285-study-guide-ko.pdf`: LLM과 함께 만든 한국어 공부 교재
+- `hw1/hw1_수식정리.md`, `hw2/hw2_수식정리.md`, `hw2/src/agents/용어정리.md`, `study-guide/HW1-HW2_수식정리.pdf`:
+  LLM의 도움을 받아 정리한 수식 노트
 - `README.md`, `README.ko.md`: 이 공부 기록
 
 - `hw2/src/`: 환경 루프, 정책, 리턴·어드밴티지, 학습 루프 TODO (크리틱 기준선과 GAE 포함)

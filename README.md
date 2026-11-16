@@ -56,6 +56,20 @@ while doing the homework: [**study-guide/cs285-study-guide-ko.pdf**](study-guide
 - **Caveat:** written together with an LLM and still being checked as I study, so it may contain errors.
   The original course materials are authoritative.
 
+### Equation notes for each assignment
+
+While doing the homework I also wrote notes (in Korean) that unpack each equation in the assignment PDFs.
+I made them by asking an LLM (Claude and others) questions, then read and edited them as my study record.
+
+| File | Content |
+|---|---|
+| [hw1/hw1_수식정리.md](hw1/hw1_수식정리.md) | HW1 Eqs. 1–3: MSE loss, flow matching loss, Euler integration |
+| [hw2/hw2_수식정리.md](hw2/hw2_수식정리.md) | HW2 Eqs. 1–26: policy gradient derivation, reward-to-go, baselines, GAE, normalization |
+| [hw2/src/agents/용어정리.md](hw2/src/agents/용어정리.md) | Analogies for lectures 6–7 and the flow of the HW2 code |
+| [study-guide/HW1-HW2_수식정리.pdf](study-guide/HW1-HW2_수식정리.pdf) | The two equation notes merged into one PDF (15 pages). The notes are unchanged; the LLM added numeric examples, links to the code, and the missing Eqs. (19)–(20) as blue "supplement" boxes |
+
+Like the study guide, these may contain errors.
+
 ## Progress
 
 | Assignment | Topic | Status |
@@ -222,6 +236,8 @@ Compared with the original repository:
 - `hw1/plot_curves.py`, `hw1/plots/`: training curve script and figure
 - `hw1/.gitignore`: ignore my local smoke-test runs (`exp_smoke/`)
 - `study-guide/cs285-study-guide-ko.pdf`: my LLM-assisted Korean study guide
+- `hw1/hw1_수식정리.md`, `hw2/hw2_수식정리.md`, `hw2/src/agents/용어정리.md`, `study-guide/HW1-HW2_수식정리.pdf`:
+  LLM-assisted equation notes
 - `README.md`, `README.ko.md`: this study log
 
 - `hw2/src/`: rollout, policy, return/advantage, and training-loop TODOs, including the critic baseline and GAE
