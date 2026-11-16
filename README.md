@@ -61,7 +61,7 @@ while doing the homework: [**study-guide/cs285-study-guide-ko.pdf**](study-guide
 | Assignment | Topic | Status |
 |---|---|---|
 | [HW1](hw1/) | Imitation learning: action chunking with MSE and flow matching (Push-T) | ✅ Done (2026-11-10) |
-| [HW2](hw2/) | Policy gradients: reward-to-go, baselines, GAE | 🔄 In progress (Experiment 1 done) |
+| [HW2](hw2/) | Policy gradients: reward-to-go, baselines, GAE | 🔄 In progress (Experiments 1–3 done) |
 | HW3 | Q-learning and actor-critic: DQN, Double DQN, SAC | ⏳ Planned |
 
 ## HW1: Imitation Learning on Push-T
@@ -132,7 +132,8 @@ See [hw1/README.md](hw1/README.md) (from the original course repository) for set
 
 Implemented so far: rollout collection (`utils.py`), the policy's action sampling and policy-gradient
 loss (`policies.py`), discounted return and reward-to-go, advantage normalization (`pg_agent.py`), and the
-training loop (`run.py`). Neural-network baseline and GAE are next.
+training loop (`run.py`), the neural-network critic (`critics.py`), and GAE (`pg_agent.py`). Experiment 4
+(InvertedPendulum tuning) is next.
 
 How the HW2 code was written: for each TODO, the LLM first gave me a similar example (and a skeleton
 with blanks when I got stuck); I wrote the lines myself, and the LLM reviewed them. My mistakes it caught
@@ -165,6 +166,52 @@ Before running, I wrote down predictions. Two of three were wrong, which taught 
 
 Caveat: one seed per setting, so some drops (e.g. `cartpole_lb_rtg_na` at the end) may be noise.
 
+### Experiment 2: HalfCheetah with a neural-network baseline (3 runs, 100 iterations each, seed 1)
+
+A critic V(s) is trained by MSE to predict reward-to-go, and the advantage is `Q − V`. `-bgs` is how many
+critic updates are made per batch of data.
+
+| Run | Setting | Final eval return | Best | Target 300 |
+|---|---|---|---|---|
+| `cheetah` | no baseline | −310.6 | −245.3 | ❌ |
+| `cheetah_baseline` | baseline, `-bgs 5` | **383.2** | **421.8** | ✅ |
+| `cheetah_baseline_bgs2` | baseline, `-bgs 2` | 219.2 | 249.5 | ❌ |
+
+![HalfCheetah eval return](hw2/plots/cheetah_eval.png)
+![HalfCheetah critic loss](hw2/plots/cheetah_baseline_loss.png)
+
+| Question | My prediction | Result |
+|---|---|---|
+| Does a baseline help? | Yes | ✅ By a wide margin (−311 vs 383). Rewards vary a lot here, so subtracting a baseline removes much of the noise |
+| Reducing `-bgs` from 5 to 2 | (I first had to ask what `-bgs` means) | The critic loss falls more slowly and spikes during the first 100k steps. While the critic is inaccurate the baseline helps less, and the final return drops from 383 to 219 |
+
+Lesson: the actor learns well only when the critic is accurate. Same caveat as Experiment 1: one seed.
+
+### Experiment 3: LunarLander, GAE λ sweep (5 runs, 200 iterations each, seed 1)
+
+GAE is implemented with the backward recursion $A_t = \delta_t + \gamma\lambda A_{t+1}$, multiplying by
+`1 - terminals[i]` so that values from the next trajectory in the batch do not leak in. Eval return swings
+a lot between iterations, so the table also reports the mean over the last 20 iterations.
+
+| λ | Mean of last 20 | Best | First iteration ≥ 150 |
+|---|---|---|---|
+| 0 | −59.1 | 96.9 | never |
+| 0.95 | −61.4 | 144.4 | never |
+| 0.98 | **172.8** | 261.4 | 105 |
+| 0.99 | 84.5 | 260.6 | 88 |
+| 1 | **171.5** | 266.1 | 139 |
+
+![LunarLander GAE lambda](hw2/plots/lunar_lander_gae.png)
+
+| Question | My prediction | Result |
+|---|---|---|
+| λ = 0 (one-step TD) | Fails | ✅ Stayed negative. It trusts only the critic, which is inaccurate early on (high bias) |
+| 0.95–0.99 vs λ = 1 | 0.95–0.99 better | 🔸 Half right. 0.98 matched λ = 1, but 0.95 was worse |
+
+Interpretation: what is clear is that λ = 0 is bad and only λ close to 1 crossed 150. LunarLander pays a large
+reward at touchdown, so looking further ahead with real rewards seems to help. The ranking within 0.95–1 is
+not reliable from one seed given how noisy the curves are.
+
 ## What I changed
 
 Compared with the original repository:
@@ -177,7 +224,7 @@ Compared with the original repository:
 - `study-guide/cs285-study-guide-ko.pdf`: my LLM-assisted Korean study guide
 - `README.md`, `README.ko.md`: this study log
 
-- `hw2/src/`: rollout, policy, return/advantage, and training-loop TODOs (baseline and GAE not yet)
-- `hw2/plot_cartpole.py`, `hw2/plots/`: Experiment 1 plot script and figures
+- `hw2/src/`: rollout, policy, return/advantage, and training-loop TODOs, including the critic baseline and GAE
+- `hw2/plot_cartpole.py`, `hw2/plot_experiments.py`, `hw2/plots/`: plot scripts and figures for Experiments 1–3
 
 The other assignments (`hw3` to `hw5` and the final projects) are still the original starter code.
