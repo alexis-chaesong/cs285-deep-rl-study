@@ -75,7 +75,7 @@ Like the study guide, these may contain errors.
 | Assignment | Topic | Status |
 |---|---|---|
 | [HW1](hw1/) | Imitation learning: action chunking with MSE and flow matching (Push-T) | ✅ Done (2026-11-10) |
-| [HW2](hw2/) | Policy gradients: reward-to-go, baselines, GAE | 🔄 In progress (Experiments 1–3 done) |
+| [HW2](hw2/) | Policy gradients: reward-to-go, baselines, GAE | ✅ Done (2026-11-17) |
 | HW3 | Q-learning and actor-critic: DQN, Double DQN, SAC | ⏳ Planned |
 
 ## HW1: Imitation Learning on Push-T
@@ -142,12 +142,12 @@ uv run --with matplotlib python plot_curves.py
 
 See [hw1/README.md](hw1/README.md) (from the original course repository) for setup with `uv` and W&B.
 
-## HW2: Policy Gradients (in progress)
+## HW2: Policy Gradients
 
 Implemented so far: rollout collection (`utils.py`), the policy's action sampling and policy-gradient
 loss (`policies.py`), discounted return and reward-to-go, advantage normalization (`pg_agent.py`), and the
-training loop (`run.py`), the neural-network critic (`critics.py`), and GAE (`pg_agent.py`). Experiment 4
-(InvertedPendulum tuning) is next.
+training loop (`run.py`), the neural-network critic (`critics.py`), and GAE (`pg_agent.py`). All four
+experiments are done.
 
 How the HW2 code was written: for each TODO, the LLM first gave me a similar example (and a skeleton
 with blanks when I got stuck); I wrote the lines myself, and the LLM reviewed them. My mistakes it caught
@@ -226,6 +226,49 @@ Interpretation: what is clear is that λ = 0 is bad and only λ close to 1 cross
 reward at touchdown, so looking further ahead with real rewards seems to help. The ranking within 0.95–1 is
 not reliable from one seed given how noisy the curves are.
 
+### Experiment 4: InvertedPendulum tuning (goal: return 1000 within 100k environment steps)
+
+| Run | Settings | First env step at 1000 | Best within 100k |
+|---|---|---|---|
+| `pendulum_default` | `-b 5000`, nothing else | 411,367 | 56 |
+| `pendulum_na_gae` | `-b 5000 -rtg -na --use_baseline --gae_lambda 0.98` | not reached (only 20 updates) | 113 |
+| `pendulum_na_gae_b1000` | `-b 1000 -rtg -na --use_baseline --gae_lambda 0.98` | **62,211** ✅ | **1000** |
+
+![InvertedPendulum default vs tuned](hw2/plots/pendulum.png)
+
+Best command:
+
+```bash
+uv run src/scripts/run.py --env_name InvertedPendulum-v4 -n 100 -b 1000 -eb 1000 \
+  -rtg -na --use_baseline --gae_lambda 0.98 --exp_name pendulum_na_gae_b1000
+```
+
+What mattered: **batch size**. With `-b 5000`, 100k steps allow only 20 policy updates, so even the
+normalization, baseline, and GAE that I chose could not get past 113. With `-b 1000`, the same settings get 100
+updates and reach 1000 at about 62k steps. The default run did reach 1000 once, at 411k steps, but then
+collapsed to 46.
+
+My prediction was that large batches learn faster, which I misremembered from Experiment 1. Experiment 1
+had already shown the opposite (per environment step, small batches win), and this experiment confirmed it.
+One seed, and the tuned curve still oscillates between 1000 and ~150 before settling.
+
+### Commands for Experiments 2–3
+
+```bash
+# Experiment 2: HalfCheetah
+C="--env_name HalfCheetah-v4 -n 100 -b 5000 -eb 3000 -rtg --discount 0.95 -lr 0.01"
+uv run src/scripts/run.py $C --exp_name cheetah
+uv run src/scripts/run.py $C --use_baseline -blr 0.01 -bgs 5 --exp_name cheetah_baseline
+uv run src/scripts/run.py $C --use_baseline -blr 0.01 -bgs 2 --exp_name cheetah_baseline_bgs2
+
+# Experiment 3: LunarLander, for λ in 0 0.95 0.98 0.99 1
+uv run src/scripts/run.py --env_name LunarLander-v2 --ep_len 1000 --discount 0.99 -n 200 -b 2000 -eb 2000 \
+  -l 3 -s 128 -lr 0.001 --use_reward_to_go --use_baseline --gae_lambda <λ> --exp_name lunar_lander_lambda<λ>
+```
+
+λ = 0 makes the advantage the one-step TD error δ_t (low variance, biased by the critic); λ = 1 makes it
+reward-to-go minus V(s_t) (unbiased, high variance).
+
 ## What I changed
 
 Compared with the original repository:
@@ -241,6 +284,6 @@ Compared with the original repository:
 - `README.md`, `README.ko.md`: this study log
 
 - `hw2/src/`: rollout, policy, return/advantage, and training-loop TODOs, including the critic baseline and GAE
-- `hw2/plot_cartpole.py`, `hw2/plot_experiments.py`, `hw2/plots/`: plot scripts and figures for Experiments 1–3
+- `hw2/plot_cartpole.py`, `hw2/plot_experiments.py`, `hw2/plots/`: plot scripts and figures for Experiments 1–4
 
 The other assignments (`hw3` to `hw5` and the final projects) are still the original starter code.

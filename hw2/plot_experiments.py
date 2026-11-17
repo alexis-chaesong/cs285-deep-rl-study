@@ -1,12 +1,12 @@
-"""Plot Experiment 2 (HalfCheetah baseline) and Experiment 3 (LunarLander GAE) learning curves."""
+"""Plot Experiments 2-4 (HalfCheetah baseline, LunarLander GAE, InvertedPendulum tuning) learning curves."""
 
 # ============================================================================
-# plot_experiments.py : HW2 실험 2, 3 그래프 그리기
+# plot_experiments.py : HW2 실험 2~4 그래프 그리기
 # ----------------------------------------------------------------------------
 # 역할 : exp/ 안의 log.csv를 읽어 학습 곡선을 그린다. (plot_cartpole.py와 같은 방식)
 # 입력 : exp/<환경>_<이름>_sd1_<날짜>/log.csv  (같은 이름이 여러 번이면 가장 최근 것)
-# 출력 : plots/cheetah_eval.png, plots/cheetah_baseline_loss.png, plots/lunar_lander_gae.png
-# 실행 : uv run --with matplotlib python plot_experiments.py [cheetah|lunar]
+# 출력 : plots/cheetah_eval.png, plots/cheetah_baseline_loss.png, plots/lunar_lander_gae.png, plots/pendulum.png
+# 실행 : uv run --with matplotlib python plot_experiments.py [cheetah|lunar|pendulum]
 # ============================================================================
 
 import csv
@@ -54,7 +54,7 @@ def plot(env: str, names: list[str], column: str, title: str, out: str, target: 
 
 def main() -> None:
     OUT.mkdir(exist_ok=True)
-    which = sys.argv[1:] or ["cheetah", "lunar"]
+    which = sys.argv[1:] or ["cheetah", "lunar", "pendulum"]
     if "cheetah" in which:
         env = "HalfCheetah-v4"
         plot(env, ["cheetah", "cheetah_baseline", "cheetah_baseline_bgs2"], "Eval_AverageReturn",
@@ -66,6 +66,9 @@ def main() -> None:
         names = [f"lunar_lander_lambda{lam}" for lam in ["0", "0.95", "0.98", "0.99", "1"]]
         plot("LunarLander-v2", names, "Eval_AverageReturn",
              "LunarLander-v2: GAE lambda", "lunar_lander_gae.png", target=150)
+    if "pendulum" in which:
+        plot("InvertedPendulum-v4", ["pendulum_default", "pendulum_na_gae", "pendulum_na_gae_b1000"],
+             "Eval_AverageReturn", "InvertedPendulum-v4: default vs tuned", "pendulum.png", target=1000)
 
 
 if __name__ == "__main__":

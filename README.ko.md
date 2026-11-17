@@ -71,7 +71,7 @@ LLM(Claude)을 이용해 2~8강 내용을 한국어로 다시 풀어 쓴 **동�
 | 과제 | 주제 | 상태 |
 |---|---|---|
 | [HW1](hw1/) | 모방학습: MSE와 flow matching으로 액션 청킹 (Push-T) | ✅ 완료 (2026-11-10) |
-| [HW2](hw2/) | 정책 경사: reward-to-go, 기준선, GAE | 🔄 진행 중 (실험 1~3 완료) |
+| [HW2](hw2/) | 정책 경사: reward-to-go, 기준선, GAE | ✅ 완료 (2026-11-17) |
 | HW3 | Q러닝과 액터-크리틱: DQN, Double DQN, SAC | ⏳ 예정 |
 
 ## HW1: Push-T 모방학습
@@ -134,10 +134,10 @@ uv run --with matplotlib python plot_curves.py
 
 `uv`와 W&B 설치 방법은 원래 강의 저장소에 있던 [hw1/README.md](hw1/README.md)를 참고하세요.
 
-## HW2: 정책 경사 (진행 중)
+## HW2: 정책 경사
 
 지금까지 구현한 것: 환경에서 한 판 돌리기(`utils.py`), 정책의 행동 뽑기와 정책 경사 손실(`policies.py`), 할인 리턴과
-reward-to-go, 어드밴티지 정규화(`pg_agent.py`), 학습 루프(`run.py`), 신경망 크리틱(`critics.py`), GAE(`pg_agent.py`). 다음은 실험 4(InvertedPendulum 튜닝)입니다.
+reward-to-go, 어드밴티지 정규화(`pg_agent.py`), 학습 루프(`run.py`), 신경망 크리틱(`critics.py`), GAE(`pg_agent.py`). 실험 4개를 모두 마쳤습니다.
 
 HW2 코드를 쓴 방식: TODO마다 LLM이 먼저 비슷한 예시를 주고(막히면 빈칸 뼈대까지), 제가 직접 줄을 쓴 뒤 LLM이
 검토했습니다. 검토에서 잡힌 제 실수는 함수 이름을 잘못 부른 것, `np.concatenate` 대신 `np.from_numpy`를 쓴 것,
@@ -215,6 +215,48 @@ GAE를 뒤에서부터 쌓는 재귀식 $A_t = \delta_t + \gamma\lambda A_{t+1}$
 큰 보상이 나오므로 실제 보상을 멀리까지 보는 쪽이 유리했던 것으로 보입니다. 0.95~1 사이의 순위는 곡선의 흔들림이
 커서 시드 하나로는 판단하기 어렵습니다.
 
+### 실험 4: InvertedPendulum 튜닝 (목표: 10만 환경 스텝 안에 1000점)
+
+| 실험 | 설정 | 처음 1000에 도달한 환경 스텝 | 10만 스텝 안의 최고 점수 |
+|---|---|---|---|
+| `pendulum_default` | `-b 5000`, 나머지 기본값 | 411,367 | 56 |
+| `pendulum_na_gae` | `-b 5000 -rtg -na --use_baseline --gae_lambda 0.98` | 도달 못 함 (업데이트 20번뿐) | 113 |
+| `pendulum_na_gae_b1000` | `-b 1000 -rtg -na --use_baseline --gae_lambda 0.98` | **62,211** ✅ | **1000** |
+
+![InvertedPendulum 기본 vs 튜닝](hw2/plots/pendulum.png)
+
+가장 좋은 명령어:
+
+```bash
+uv run src/scripts/run.py --env_name InvertedPendulum-v4 -n 100 -b 1000 -eb 1000 \
+  -rtg -na --use_baseline --gae_lambda 0.98 --exp_name pendulum_na_gae_b1000
+```
+
+가장 중요했던 것은 **배치 크기**입니다. `-b 5000`이면 10만 스텝 동안 정책을 20번밖에 업데이트하지 못해서, 제가 고른
+정규화, 기준선, GAE를 켜도 113점에서 멈췄습니다. 같은 설정에 `-b 1000`만 바꾸면 업데이트가 100번이 되어 약 6.2만
+스텝에서 1000점에 도달했습니다. 기본 설정은 41만 스텝에서 한 번 1000을 찍었지만 곧 46점으로 무너졌습니다.
+
+저는 "큰 배치가 더 빠르다"고 예측했는데, 실험 1 결과를 잘못 기억한 것이었습니다. 실험 1에서 이미 환경 스텝 기준으로는
+작은 배치가 빨랐고, 이번 실험이 그것을 다시 확인해 주었습니다. 시드 하나이고, 튜닝한 곡선도 안정되기 전까지 1000과
+150 사이를 오갑니다.
+
+### 실험 2~3 명령어
+
+```bash
+# 실험 2: HalfCheetah
+C="--env_name HalfCheetah-v4 -n 100 -b 5000 -eb 3000 -rtg --discount 0.95 -lr 0.01"
+uv run src/scripts/run.py $C --exp_name cheetah
+uv run src/scripts/run.py $C --use_baseline -blr 0.01 -bgs 5 --exp_name cheetah_baseline
+uv run src/scripts/run.py $C --use_baseline -blr 0.01 -bgs 2 --exp_name cheetah_baseline_bgs2
+
+# 실험 3: LunarLander, λ는 0 0.95 0.98 0.99 1
+uv run src/scripts/run.py --env_name LunarLander-v2 --ep_len 1000 --discount 0.99 -n 200 -b 2000 -eb 2000 \
+  -l 3 -s 128 -lr 0.001 --use_reward_to_go --use_baseline --gae_lambda <λ> --exp_name lunar_lander_lambda<λ>
+```
+
+λ = 0이면 어드밴티지가 한 걸음 TD 오차 δ_t가 됩니다(분산은 작지만 크리틱 때문에 편향이 생김). λ = 1이면 reward-to-go
+− V(s_t)가 됩니다(편향은 없지만 분산이 큼).
+
 ## 내가 바꾼 부분
 
 원래 저장소와 비교해서:
@@ -230,6 +272,6 @@ GAE를 뒤에서부터 쌓는 재귀식 $A_t = \delta_t + \gamma\lambda A_{t+1}$
 - `README.md`, `README.ko.md`: 이 공부 기록
 
 - `hw2/src/`: 환경 루프, 정책, 리턴·어드밴티지, 학습 루프 TODO (크리틱 기준선과 GAE 포함)
-- `hw2/plot_cartpole.py`, `hw2/plot_experiments.py`, `hw2/plots/`: 실험 1~3 그래프 스크립트와 그림
+- `hw2/plot_cartpole.py`, `hw2/plot_experiments.py`, `hw2/plots/`: 실험 1~4 그래프 스크립트와 그림
 
 나머지 과제(`hw3`~`hw5`, 기말 프로젝트)는 아직 원래 시작 코드 그대로입니다.
