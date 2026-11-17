@@ -243,7 +243,7 @@ uv run src/scripts/run.py --env_name InvertedPendulum-v4 -n 100 -b 1000 -eb 1000
   -rtg -na --use_baseline --gae_lambda 0.98 --exp_name pendulum_na_gae_b1000
 ```
 
-What mattered: **batch size**. With `-b 5000`, 100k steps allow only 20 policy updates, so even the
+Between these two tuned runs, **batch size** made the difference. With `-b 5000`, 100k steps allow only 20 policy updates, so even the
 normalization, baseline, and GAE that I chose could not get past 113. With `-b 1000`, the same settings get 100
 updates and reach 1000 at about 62k steps. The default run did reach 1000 once, at 411k steps, but then
 collapsed to 46.
@@ -251,6 +251,31 @@ collapsed to 46.
 My prediction was that large batches learn faster, which I misremembered from Experiment 1. Experiment 1
 had already shown the opposite (per environment step, small batches win), and this experiment confirmed it.
 One seed, and the tuned curve still oscillates between 1000 and ~150 before settling.
+
+**Ablation: which knob actually mattered?** The comparison above changes four knobs at once, so I ran three
+more runs with `-b 1000`, turning knobs on one at a time. Before running, I predicted that batch size alone
+would be enough, that runs without a baseline or GAE would fail, and that GAE was necessary.
+
+| Run (all `-b 1000`) | Knobs on | First env step at 1000 | Mean of last 10 |
+|---|---|---|---|
+| `pendulum_b1000` | none | not reached (best 120) | 62 |
+| `pendulum_b1000_rtg_na` | `-rtg -na` | 77,086 | 935 |
+| `pendulum_b1000_rtg_na_base` | `-rtg -na --use_baseline` | 91,314 | 763 |
+| `pendulum_na_gae_b1000` | `-rtg -na --use_baseline --gae_lambda 0.98` | **62,211** | **1000** |
+
+![InvertedPendulum ablation](hw2/plots/pendulum_ablation.png)
+
+| My prediction | Result |
+|---|---|
+| Batch size alone is enough | ❌ Best was 120. Frequent updates do not help when each gradient is this noisy |
+| Without a baseline or GAE it fails | ❌ Reward-to-go plus normalization alone reached 1000 at 77k steps |
+| GAE is necessary | 🔸 Not necessary, but fastest and the only run that stayed at 1000 |
+
+What I take from this: the key was **small batches combined with variance reduction**, since neither alone
+worked. Normalization already subtracts the batch mean, so it acts much like a baseline, which is why adding
+the critic baseline did not help further here (the slower 91k may just be seed noise). GAE builds on the
+critic rather than replacing reward-to-go and the baseline: it trades some critic bias for lower variance,
+and here that showed up as stability. All runs use one seed.
 
 ### Commands for Experiments 2–3
 

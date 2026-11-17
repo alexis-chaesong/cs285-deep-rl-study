@@ -5,7 +5,7 @@
 # ----------------------------------------------------------------------------
 # 역할 : exp/ 안의 log.csv를 읽어 학습 곡선을 그린다. (plot_cartpole.py와 같은 방식)
 # 입력 : exp/<환경>_<이름>_sd1_<날짜>/log.csv  (같은 이름이 여러 번이면 가장 최근 것)
-# 출력 : plots/cheetah_eval.png, plots/cheetah_baseline_loss.png, plots/lunar_lander_gae.png, plots/pendulum.png
+# 출력 : plots/cheetah_eval.png, plots/cheetah_baseline_loss.png, plots/lunar_lander_gae.png, plots/pendulum.png, plots/pendulum_ablation.png
 # 실행 : uv run --with matplotlib python plot_experiments.py [cheetah|lunar|pendulum]
 # ============================================================================
 
@@ -69,6 +69,11 @@ def main() -> None:
     if "pendulum" in which:
         plot("InvertedPendulum-v4", ["pendulum_default", "pendulum_na_gae", "pendulum_na_gae_b1000"],
              "Eval_AverageReturn", "InvertedPendulum-v4: default vs tuned", "pendulum.png", target=1000)
+        # 하나씩 빼 보기(ablation): 모두 -b 1000, 켜는 손잡이만 다름
+        plot("InvertedPendulum-v4",
+             ["pendulum_b1000", "pendulum_b1000_rtg_na", "pendulum_b1000_rtg_na_base", "pendulum_na_gae_b1000"],
+             "Eval_AverageReturn", "InvertedPendulum-v4: ablation (all -b 1000)", "pendulum_ablation.png",
+             target=1000)
 
 
 if __name__ == "__main__":
