@@ -169,6 +169,20 @@ HW2 코드를 쓴 방식: TODO마다 LLM이 먼저 비슷한 예시를 주고(�
 
 한계: 설정마다 시드 하나라서, 일부 하락(예: `cartpole_lb_rtg_na`의 마지막 부분)은 운일 수 있습니다.
 
+명령어:
+
+```bash
+# 실험 1: CartPole (나머지 설정은 기본값)
+uv run src/scripts/run.py --env_name CartPole-v0 -n 100 -b 1000 --exp_name cartpole
+uv run src/scripts/run.py --env_name CartPole-v0 -n 100 -b 1000 -rtg --exp_name cartpole_rtg
+uv run src/scripts/run.py --env_name CartPole-v0 -n 100 -b 1000 -na --exp_name cartpole_na
+uv run src/scripts/run.py --env_name CartPole-v0 -n 100 -b 1000 -rtg -na --exp_name cartpole_rtg_na
+uv run src/scripts/run.py --env_name CartPole-v0 -n 100 -b 4000 --exp_name cartpole_lb
+uv run src/scripts/run.py --env_name CartPole-v0 -n 100 -b 4000 -rtg --exp_name cartpole_lb_rtg
+uv run src/scripts/run.py --env_name CartPole-v0 -n 100 -b 4000 -na --exp_name cartpole_lb_na
+uv run src/scripts/run.py --env_name CartPole-v0 -n 100 -b 4000 -rtg -na --exp_name cartpole_lb_rtg_na
+```
+
 ### 실험 2: HalfCheetah 신경망 기준선 (3개, 각 100번 반복, 시드 1)
 
 크리틱 V(s)를 reward-to-go에 MSE로 맞추도록 학습시키고, 어드밴티지를 `Q − V`로 계산했습니다. `-bgs`는 데이터를 한 번
